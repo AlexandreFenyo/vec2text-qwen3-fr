@@ -1,0 +1,11 @@
+index	cosine	text	label
+0	0.9831	Le Conseil d’Etat a rendu sa décision le 3 mars 2024 sur la recours de la commune.	Le Conseil d'État a rendu sa décision le 3 mars 2024 concernant le recours de la commune.
+1	0.8993	Assure sa travailleuse doit communiquer son arrêt à la caisse primaire au moins 48 heures de sa période de travail.	L'assurée doit transmettre son arrêt de travail à sa caisse primaire dans un délai de 48 heures.
+2	0.9511	La réunion de lancement aura lieu le mardi 12 heures prochain, sur le projet B12, salle de projet.	La réunion de lancement du projet aura lieu mardi prochain à 14 h en salle B12.
+3	0.9761	Victor Hugo publie Les Misérables en 1862, dix ans après l'écrivain.	Victor Hugo publie Les Misérables en 1862, après dix-sept ans d'écriture.
+4	0.9625	Le montant de la facture s'élève à 1250 euros hors taxes, soit 30 jours à payer.	Le montant de la facture s'élève à 1 250 euros hors taxes, payable sous trente jours.
+5	0.9271	Pour réinitialiser votre mot de passe, cliquez sur le lien ci-dessus.	Pour réinitialiser votre mot de passe, cliquez sur le lien reçu par courriel.
+6	0.9596	La photosynthèse convertit l'eau et le dioxygène en glucose et en dioxyde de carbone.	La photosynthèse transforme le dioxyde de carbone et l'eau en glucose et en oxygène.
+7	0.9782	Marie Dupont, née le 8 avril 1985 à Lyon, est située au 12 rue du domicile.	Marie Dupont, née le 12 avril 1985 à Lyon, est domiciliée au 8 rue des Lilas à Villeurbanne.
+8	0.9383	Le TGV Paris-Marseille est relié à Paris en 3 heures et 20 minutes.	Le TGV reliant Paris à Marseille circule en trois heures et vingt minutes environ.
+9	0.9644	Le contrat est renouvelable pour une durée de 3 ans. Ce contrat prend effet le 1er janvier 2025.	Le contrat prend effet le 1er janvier 2025 pour une durée de trois ans renouvelable.

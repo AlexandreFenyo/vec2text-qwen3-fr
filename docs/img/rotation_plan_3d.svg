@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" width="800" height="520" font-family="Helvetica, Arial, sans-serif">
+<rect width="800" height="520" fill="#ffffff"/>
+<defs><marker id="ah-1f6fb2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f6fb2"/></marker><marker id="ah-c0392b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c0392b"/></marker><marker id="ah-2e8b57" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2e8b57"/></marker><marker id="ah-8a8a8a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a8a8a"/></marker></defs>
+<polygon points="234.0,394.8 858.0,394.8 573.0,240.9 -51.0,240.9" fill="#dfe8f3" stroke="#9fb3c8" stroke-width="1.5" opacity="0.9"/>
+<line x1="400.0" y1="330.0" x2="660.0" y2="330.0" stroke="#8a8a8a" stroke-width="2" marker-end="url(#ah-8a8a8a)" />
+<line x1="400.0" y1="330.0" x2="265.0" y2="257.1" stroke="#8a8a8a" stroke-width="2" marker-end="url(#ah-8a8a8a)" />
+<line x1="400.0" y1="330.0" x2="400.0" y2="165.0" stroke="#2e8b57" stroke-width="2.5" marker-end="url(#ah-2e8b57)" />
+<line x1="400.0" y1="330.0" x2="400.0" y2="405.0" stroke="#2e8b57" stroke-width="2.5" marker-end="url(#ah-2e8b57)" />
+<line x1="400.0" y1="330.0" x2="540.5" y2="293.6" stroke="#1f6fb2" stroke-width="1.5" marker-end="url(#ah-1f6fb2)" stroke-dasharray="6,5" opacity="0.8"/>
+<line x1="400.0" y1="330.0" x2="163.0" y2="265.2" stroke="#c0392b" stroke-width="1.5" marker-end="url(#ah-c0392b)" stroke-dasharray="6,5" opacity="0.8"/>
+<line x1="540.5" y1="293.6" x2="540.5" y2="196.1" stroke="#1f6fb2" stroke-width="1.2" stroke-dasharray="4,4"/>
+<line x1="163.0" y1="265.2" x2="163.0" y2="167.7" stroke="#c0392b" stroke-width="1.2" stroke-dasharray="4,4"/>
+<polyline points="461.2,314.1 454.0,312.2 446.6,310.4 438.9,308.7 431.1,307.1 423.1,305.6 415.0,304.2 406.8,302.9 398.7,301.8 390.5,300.7 382.3,299.9 374.3,299.1 366.3,298.5 358.5,298.1 350.9,297.8 343.6,297.6 336.5,297.6 329.7,297.8 323.2,298.1 317.1,298.5 311.3,299.1 306.0,299.9 301.1,300.7 296.7,301.8" fill="none" stroke="#444" stroke-width="1.5"/>
+<line x1="400.0" y1="330.0" x2="540.5" y2="196.1" stroke="#1f6fb2" stroke-width="3.5" marker-end="url(#ah-1f6fb2)" />
+<line x1="400.0" y1="330.0" x2="163.0" y2="167.7" stroke="#c0392b" stroke-width="3.5" marker-end="url(#ah-c0392b)" />
+<circle cx="400.0" cy="330.0" r="3.5" fill="#222"/>
+<text x="550.5" y="192.1" fill="#1f6fb2" font-size="20" font-weight="bold">v</text>
+<text x="123.0" y="161.7" fill="#c0392b" font-size="20" font-weight="bold">K v</text>
+<text x="410.0" y="161.0" fill="#2e8b57" font-size="16" font-weight="normal">axe (orthogonal au plan) : inchangé</text>
+<text x="666.0" y="348.0" fill="#8a8a8a" font-size="16" font-weight="normal">e1</text>
+<text x="243.0" y="251.1" fill="#8a8a8a" font-size="16" font-weight="normal">e2</text>
+<text x="457.5" y="253.1" fill="#5a6b7c" font-size="15" font-weight="normal">plan de rotation (e1, e2)</text>
+<text x="441.8" y="331.8" fill="#444" font-size="15" font-weight="normal">90°</text>
+<text x="548.5" y="311.6" fill="#1f6fb2" font-size="13" font-weight="normal">composante dans le plan</text>
+<text x="53.0" y="283.2" fill="#c0392b" font-size="13" font-weight="normal">tournée de 90°</text>
+<text x="30" y="40" font-size="20" font-weight="bold" fill="#222">Rotation de 90° dans un plan : v → K v</text>
+<text x="30" y="64" font-size="14" fill="#444">La composante de v dans le plan tourne d'un quart de tour ; la composante sur l'axe orthogonal ne change pas.</text>
+<text x="30" y="500" font-size="13" fill="#666">En dimension 1024, l'« axe » est remplacé par les 1022 directions orthogonales au plan, et 512 plans deux à deux orthogonaux tournent simultanément.</text>
+</svg>

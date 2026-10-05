@@ -1,0 +1,14 @@
+# secrets
+.github
+.hf
+# environnement et données volumineuses
+.venv/
+data/
+ckpt/
+logs/
+export/
+# fichiers régénérables
+examples/**/*.npy
+docs/principe.html
+__pycache__/
+*.pyc

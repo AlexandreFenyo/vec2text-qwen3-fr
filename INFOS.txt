@@ -1,0 +1,48 @@
+WSL
+
+cat > /tmp/text.txt <<EOF
+La santé humaine est définie par l'Organisation mondiale de la santé (OMS) comme un état de complet bien-être physique, mental et social, et ne consiste pas seulement en une absence de maladie ou d'infirmité.
+EOF
+
+.venv/bin/python embed.py --texts /tmp/text.txt --out /tmp/vecs.tsv --metadata /tmp/meta.tsv
+# .venv/bin/python invert.py --vectors /tmp/vecs.tsv --metadata /tmp/meta.tsv --inverter ckpt/inverter128 --corrector ckpt/corrector128 --steps 5 --beam 4 --out /tmp/resultat.tsv # --min_new_tokens 400
+.venv/bin/python invert.py --vectors /tmp/vecs.tsv --metadata /tmp/meta.tsv --inverter ckpt/inverter128 --corrector ckpt/corrector128 --steps 5 --beam 4 --out /tmp/resultat.tsv --min_new_tokens 400
+cut -f1-3 /tmp/resultat.tsv
+
+.venv/bin/python make_rotation.py --degrees 30 --seed 42 --out /tmp/rot.npy
+.venv/bin/python rotate_vectors.py --matrix /tmp/rot.npy --vectors /tmp/vecs.tsv --out /tmp/vecs2.tsv
+.venv/bin/python invert.py --vectors /tmp/vecs.tsv --metadata /tmp/meta.tsv --inverter ckpt/inverter128 --corrector ckpt/corrector128 --steps 5 --beam 4 --out /tmp/resultat.tsv --min_new_tokens 400
+cut -f1-3 /tmp/resultat.tsv
+
+.venv/bin/python make_rotation.py --degrees 180 --seed 42 --out /tmp/rot.npy
+.venv/bin/python rotate_vectors.py --matrix /tmp/rot.npy --vectors /tmp/vecs.tsv --out /tmp/vecs2.tsv
+.venv/bin/python invert.py --vectors /tmp/vecs2.tsv --metadata /tmp/meta.tsv --inverter ckpt/inverter128 --corrector ckpt/corrector128 --steps 5 --beam 4 --out /tmp/resultat.tsv
+cut -f1-3 /tmp/resultat.tsv
+
+.venv/bin/python sweep_rotation.py --vectors /tmp/vecs.tsv --metadata /tmp/meta.tsv --start 0 --stop 180 --step 1 --seed 42 --profile long --steps 5 --beam 4 --out /tmp/sweep.tsv --per_angle_dir /tmp/sweep
+
+------------------------------------------------------------
+
+cat > /tmp/text.txt <<EOF
+La santé humaine est définie par l'Organisation mondiale de la santé (OMS) comme un état de complet bien-être physique, mental et social, et ne consiste pas seulement en une absence de maladie ou d'infirmité.
+EOF
+
+# 1. Texte -> vecteur au format Projector (une ligne de texte = un vecteur)
+.venv/bin/python embed.py --texts /tmp/text.txt --out /tmp/vecs.tsv --metadata /tmp/meta.tsv
+
+# 2. Clé : rotation de 90° dans 512 plans aléatoires, graine secrète de 256 bits
+# SEED=$(.venv/bin/python -c "import secrets;print(secrets.token_hex(32))")
+SEED=a92359d6b584963e7a2fab928a2ae4d4f87361511bd314dd98a4d11e1e3db782
+echo "$SEED"            # à conserver : c'est la clé (la matrice s'en déduit)
+.venv/bin/python make_rotation.py --fixed_angle 90 --seed_hex $SEED --out /tmp/rot.npy
+
+# 3. Vecteur tourné = ce qui serait stocké dans la base
+.venv/bin/python rotate_vectors.py --matrix /tmp/rot.npy --vectors /tmp/vecs.tsv --out /tmp/vecs_rot.tsv
+
+# 4a. Récupération AVEC la clé : dé-rotation (inverse = -K) puis inversion au meilleur réglage
+.venv/bin/python rotate_vectors.py --matrix /tmp/rot.npy --vectors /tmp/vecs_rot.tsv --out /tmp/vecs_back.tsv --inverse
+.venv/bin/python invert.py --vectors /tmp/vecs_back.tsv --metadata /tmp/meta.tsv --profile long --steps 10 --beam 8 --out /tmp/resultat_avec_cle.tsv
+
+# 4b. Tentative SANS la clé : inversion directe du vecteur tourné
+.venv/bin/python invert.py --vectors /tmp/vecs_rot.tsv --metadata /tmp/meta.tsv --profile long --steps 10 --beam 8 --out /tmp/resultat_sans_cle.tsv
+    

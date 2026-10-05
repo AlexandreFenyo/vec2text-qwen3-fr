@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 650" width="1240" height="650" font-family="Helvetica, Arial, sans-serif">
+<rect width="1240" height="650" fill="#ffffff"/>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#444"/></marker></defs>
+<text x="30" y="36" font-size="21" font-weight="bold" fill="#222">Encodage puis inversion d'un passage (sans rotation)</text>
+<path d="M 665 200 L 665 232 L 125 232 L 125 265" fill="none" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+<text x="395" y="226" text-anchor="middle" font-size="12" fill="#444">vecteur cible e</text>
+<path d="M 675 375 L 675 404 L 145 404 L 145 445" fill="none" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+<text x="410" y="398" text-anchor="middle" font-size="12" fill="#444">hypothèse courante h(i)</text>
+<path d="M 765 555 L 765 592 L 145 592 L 145 555" fill="none" stroke="#8a4b9a" stroke-width="2" stroke-dasharray="7,5" marker-end="url(#arr)"/>
+<text x="455" y="612" text-anchor="middle" font-size="12" fill="#8a4b9a">boucle : h(i+1) = meilleur candidat, jusqu'à cosinus ≈ 1 ou N étapes</text>
+<rect x="26" y="65" width="237.6" height="20" fill="#ffffff"/><text x="30" y="80" font-size="14" font-weight="bold" fill="#5a6b7c">1. ENCODAGE (modèle public, figé)</text>
+<rect x="30" y="95" width="170" height="105" rx="10" fill="#fff7e6" stroke="#d9a441" stroke-width="1.5"/>
+<text x="115.0" y="119" text-anchor="middle" font-size="15" font-weight="bold" fill="#1b2a38">Texte</text>
+<text x="115.0" y="141" text-anchor="middle" font-size="12.5" fill="#333">« L'assurée doit</text>
+<text x="115.0" y="158" text-anchor="middle" font-size="12.5" fill="#333">transmettre son arrêt</text>
+<text x="115.0" y="175" text-anchor="middle" font-size="12.5" fill="#333">de travail sous 48 h »</text>
+<line x1="200" y1="147" x2="270" y2="147" stroke="#444" stroke-width="2" marker-end="url(#arr)"/><text x="235.0" y="137" text-anchor="middle" font-size="12" fill="#444">tokenizer</text>
+<rect x="270" y="95" width="250" height="105" rx="10" fill="#eef3f8" stroke="#7a93ad" stroke-width="1.5"/>
+<text x="395.0" y="119" text-anchor="middle" font-size="15" font-weight="bold" fill="#1b2a38">Qwen3-Embedding-0.6B</text>
+<text x="395.0" y="141" text-anchor="middle" font-size="12.5" fill="#333">28 couches, attention causale</text>
+<text x="395.0" y="158" text-anchor="middle" font-size="12.5" fill="#333">état du dernier token</text>
+<text x="395.0" y="175" text-anchor="middle" font-size="12.5" fill="#333">normalisation</text>
+<line x1="520" y1="147" x2="590" y2="147" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="590" y="95" width="150" height="105" rx="10" fill="#e8f4ea" stroke="#5e9c6e" stroke-width="1.5"/>
+<text x="665.0" y="119" text-anchor="middle" font-size="15" font-weight="bold" fill="#1b2a38">Vecteur e</text>
+<text x="665.0" y="141" text-anchor="middle" font-size="12.5" fill="#333">1 024 nombres</text>
+<text x="665.0" y="158" text-anchor="middle" font-size="12.5" fill="#333">norme 1</text>
+<text x="665.0" y="175" text-anchor="middle" font-size="12.5" fill="#333">(ce qui est stocké)</text>
+<rect x="26" y="239" width="295.2" height="20" fill="#ffffff"/><text x="30" y="254" font-size="14" font-weight="bold" fill="#5a6b7c">2. INVERSION (modèles entraînés, étape 0)</text>
+<rect x="30" y="265" width="190" height="110" rx="10" fill="#eef3f8" stroke="#7a93ad" stroke-width="1.5"/>
+<text x="125.0" y="289" text-anchor="middle" font-size="15" font-weight="bold" fill="#1b2a38">Projection</text>
+<text x="125.0" y="311" text-anchor="middle" font-size="12.5" fill="#333">réseau 1024 → 16×1024</text>
+<text x="125.0" y="328" text-anchor="middle" font-size="12.5" fill="#333">= 16 pseudo-tokens</text>
+<text x="125.0" y="345" text-anchor="middle" font-size="12.5" fill="#333">(fiches de consignes)</text>
+<line x1="220" y1="320" x2="290" y2="320" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="290" y="265" width="250" height="110" rx="10" fill="#eef3f8" stroke="#7a93ad" stroke-width="1.5"/>
+<text x="415.0" y="289" text-anchor="middle" font-size="15" font-weight="bold" fill="#1b2a38">Décodeur Qwen3-0.6B</text>
+<text x="415.0" y="311" text-anchor="middle" font-size="12.5" fill="#333">lit les 16 pseudo-tokens</text>
+<text x="415.0" y="328" text-anchor="middle" font-size="12.5" fill="#333">puis génère le texte</text>
+<text x="415.0" y="345" text-anchor="middle" font-size="12.5" fill="#333">token par token (faisceau 4-8)</text>
+<line x1="540" y1="320" x2="610" y2="320" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="610" y="265" width="170" height="110" rx="10" fill="#fff7e6" stroke="#d9a441" stroke-width="1.5"/>
+<text x="695.0" y="289" text-anchor="middle" font-size="15" font-weight="bold" fill="#1b2a38">Hypothèse h(0)</text>
+<text x="695.0" y="311" text-anchor="middle" font-size="12.5" fill="#333">« L'assuré doit envoyer</text>
+<text x="695.0" y="328" text-anchor="middle" font-size="12.5" fill="#333">son arrêt de travail</text>
+<text x="695.0" y="345" text-anchor="middle" font-size="12.5" fill="#333">sous 48 heures »</text>
+<rect x="26" y="419" width="324.0" height="20" fill="#ffffff"/><text x="30" y="434" font-size="14" font-weight="bold" fill="#5a6b7c">3. CORRECTION ITÉRATIVE (répétée 5 à 10 fois)</text>
+<rect x="30" y="445" width="230" height="110" rx="10" fill="#eef3f8" stroke="#7a93ad" stroke-width="1.5"/>
+<text x="145.0" y="469" text-anchor="middle" font-size="15" font-weight="bold" fill="#1b2a38">Ré-encodage</text>
+<text x="145.0" y="491" text-anchor="middle" font-size="12.5" fill="#333">φ(h(i)) par Qwen3-Embedding</text>
+<text x="145.0" y="508" text-anchor="middle" font-size="12.5" fill="#333">cosinus avec e</text>
+<text x="145.0" y="525" text-anchor="middle" font-size="12.5" fill="#333">différence e − φ(h(i))</text>
+<line x1="260" y1="500" x2="330" y2="500" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="330" y="445" width="270" height="110" rx="10" fill="#eef3f8" stroke="#7a93ad" stroke-width="1.5"/>
+<text x="465.0" y="469" text-anchor="middle" font-size="15" font-weight="bold" fill="#1b2a38">Correcteur (Qwen3-0.6B)</text>
+<text x="465.0" y="491" text-anchor="middle" font-size="12.5" fill="#333">3×16 pseudo-tokens (e, φ(h), e−φ(h))</text>
+<text x="465.0" y="508" text-anchor="middle" font-size="12.5" fill="#333">+ texte de l'hypothèse</text>
+<text x="465.0" y="525" text-anchor="middle" font-size="12.5" fill="#333">→ candidats corrigés (faisceau)</text>
+<line x1="600" y1="500" x2="670" y2="500" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="670" y="445" width="230" height="110" rx="10" fill="#e8f4ea" stroke="#5e9c6e" stroke-width="1.5"/>
+<text x="785.0" y="469" text-anchor="middle" font-size="15" font-weight="bold" fill="#1b2a38">Sélection</text>
+<text x="785.0" y="491" text-anchor="middle" font-size="12.5" fill="#333">ré-encodage des candidats</text>
+<text x="785.0" y="508" text-anchor="middle" font-size="12.5" fill="#333">on garde les meilleurs</text>
+<text x="785.0" y="525" text-anchor="middle" font-size="12.5" fill="#333">par cosinus avec e</text>
+<line x1="900" y1="500" x2="960" y2="500" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="960" y="445" width="260" height="110" rx="10" fill="#fff7e6" stroke="#d9a441" stroke-width="1.5"/>
+<text x="1090.0" y="469" text-anchor="middle" font-size="15" font-weight="bold" fill="#1b2a38">Texte reconstruit</text>
+<text x="1090.0" y="491" text-anchor="middle" font-size="12.5" fill="#333">« L'assurée doit transmettre</text>
+<text x="1090.0" y="508" text-anchor="middle" font-size="12.5" fill="#333">son arrêt de travail</text>
+<text x="1090.0" y="525" text-anchor="middle" font-size="12.5" fill="#333">sous 48 heures »  cos = 1,000</text>
+<rect x="800" y="95" width="420" height="105" rx="10" fill="#f6f6f6" stroke="#ccc"/>
+<text x="815" y="118" font-size="13" font-weight="bold" fill="#333">Légende</text>
+<text x="815" y="140" font-size="12.5" fill="#333">Encadrés jaunes : texte · verts : vecteurs et scores · bleus : modèles.</text>
+<text x="815" y="160" font-size="12.5" fill="#333">L'encodeur est public et figé ; projection, décodeur et correcteur</text>
+<text x="815" y="178" font-size="12.5" fill="#333">sont entraînés sur des millions de paires (texte, vecteur) fabriquées.</text>
+</svg>
