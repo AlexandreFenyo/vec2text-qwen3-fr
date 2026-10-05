@@ -12,3 +12,7 @@ examples/**/*.npy
 docs/principe.html
 __pycache__/
 *.pyc
+# sauvegardes Emacs
+*~
+\#*\#
+.\#*
