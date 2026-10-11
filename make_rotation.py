@@ -8,21 +8,25 @@ plane, i.e. distinct matrices). With --basis random (default) the frame itself i
 (Haar-distributed); with --basis canonical the planes are the coordinate planes (axes 0-1, 2-3, ...).
 Expected cosine between a vector and its image: sin(D)/D with D in radians (1 at 0, 0 at 180 and 360, -0.21 at 270).
 
-  python make_rotation.py --degrees 30 --out rot30.npy            # random frame, angles in [0, 30°]
-  python make_rotation.py --degrees 180 --seed 7 --out rot.npy --tsv rot.tsv
-  python make_rotation.py --fixed_angle 90 --seed_hex $(python -c "import hmac,hashlib;print(hmac.new(b'master-key', b'user-123', hashlib.sha256).hexdigest())") --out user123.npy
+  python make_rotation.py --degrees 180 --seed_hex $(python -c "import hmac,hashlib;print(hmac.new(b'master-key', b'user-123', hashlib.sha256).hexdigest())") --out user123.npy   # recommended key
+  python make_rotation.py --degrees 30 --out rot30.npy            # random frame, angles in [0, 30°] (experiments)
+  python make_rotation.py --degrees_range 60 120 --out r.npy      # experiments only
+  python make_rotation.py --fixed_angle 90 --out k90.npy          # K = Q J Q^T (M^2 = -I: do not use with a rotation oracle)
 """
 import argparse, sys
 import numpy as np
 
 
-def rotation_matrix(dim, max_degrees, seed=0, basis="random", fixed_angle=None):
+def rotation_matrix(dim, max_degrees, seed=0, basis="random", fixed_angle=None, angle_range=None):
     """seed: int, or a 256-bit hex string (e.g. an HMAC of a master key and a user id) for key derivation.
-    fixed_angle: use this angle (degrees) in every plane instead of random angles in [0, max_degrees]."""
+    fixed_angle: the same angle (degrees) in every plane. angle_range=(lo, hi): uniform angles in [lo, hi].
+    Default: uniform angles in [0, max_degrees]; max_degrees=180 is the recommended key (Haar-like rotation)."""
     rng = np.random.default_rng(int(seed, 16) if isinstance(seed, str) else seed)
     n_planes = dim // 2
     if fixed_angle is not None:
         angles = np.full(n_planes, np.deg2rad(fixed_angle))
+    elif angle_range is not None:
+        angles = np.deg2rad(rng.uniform(angle_range[0], angle_range[1], size=n_planes))
     else:
         angles = np.deg2rad(rng.uniform(0.0, max_degrees, size=n_planes))
     # block-diagonal matrix of 2x2 rotations (plus an untouched axis if dim is odd)
@@ -43,7 +47,8 @@ def rotation_matrix(dim, max_degrees, seed=0, basis="random", fixed_angle=None):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--degrees", type=float, default=None, help="maximum rotation angle per plane, in degrees (0..360); each plane gets a uniform angle in [0, max]")
-    ap.add_argument("--fixed_angle", type=float, default=None, help="same angle in every plane (90 recommended; 0, 180 and 360 are refused: they give +I or -I, i.e. no key)")
+    ap.add_argument("--fixed_angle", type=float, default=None, help="same angle in every plane (0, 180 and 360 are refused: +I or -I, no key). Note: 90 gives M^2 = -I, exploitable by a rotation oracle; prefer --degrees 180")
+    ap.add_argument("--degrees_range", type=float, nargs=2, metavar=("MIN", "MAX"), default=None, help="uniform angles in [MIN, MAX] (for experiments; narrow ranges around 90 keep M^2 close to -I)")
     ap.add_argument("--seed_hex", default=None, help="256-bit hex seed for key derivation, e.g. HMAC-SHA256(master key, user id); overrides --seed")
     ap.add_argument("--dim", type=int, default=1024)
     ap.add_argument("--seed", type=int, default=0)
@@ -51,19 +56,20 @@ def main():
     ap.add_argument("--out", required=True, help="output .npy (float64 matrix dim x dim)")
     ap.add_argument("--tsv", default=None, help="also write the matrix as TSV")
     args = ap.parse_args()
-    if args.fixed_angle is None and args.degrees is None:
-        sys.exit("give --degrees (random angles) or --fixed_angle")
+    if args.fixed_angle is None and args.degrees is None and args.degrees_range is None:
+        sys.exit("give --degrees (random angles, 180 recommended), --degrees_range or --fixed_angle")
     if args.fixed_angle is not None and (abs(np.sin(np.deg2rad(args.fixed_angle))) < 1e-9):
         sys.exit("--fixed_angle 0/180/360 gives +I or -I: no secret at all; use 90")
     if args.degrees is not None and not 0 <= args.degrees <= 360:
         sys.exit("--degrees must be between 0 and 360")
     seed = args.seed_hex if args.seed_hex else args.seed
-    M, angles = rotation_matrix(args.dim, args.degrees or 0.0, seed, args.basis, args.fixed_angle)
+    M, angles = rotation_matrix(args.dim, args.degrees or 0.0, seed, args.basis, args.fixed_angle, args.degrees_range)
     np.save(args.out, M)
     if args.tsv:
         np.savetxt(args.tsv, M, delimiter="\t", fmt="%.10f")
     orth = np.abs(M @ M.T - np.eye(args.dim)).max()
-    rng_desc = f"fixed angle {args.fixed_angle}°" if args.fixed_angle is not None else f"angles in [0, {args.degrees}°]"
+    rng_desc = (f"fixed angle {args.fixed_angle}°" if args.fixed_angle is not None else
+                f"angles in [{args.degrees_range[0]}°, {args.degrees_range[1]}°]" if args.degrees_range else f"angles in [0, {args.degrees}°]")
     print(f"rotation {args.dim}x{args.dim} saved to {args.out}: {len(angles)} planes, {rng_desc} "
           f"(mean {angles.mean():.2f}°), basis={args.basis}, det={np.linalg.det(M):+.6f}, max|MM^T-I|={orth:.1e}")
     # effect on a typical unit vector: expected cosine between v and Mv

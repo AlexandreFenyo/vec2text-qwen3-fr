@@ -50,9 +50,9 @@ chapitre 9 a été fait sur une RTX 5090.
 .venv/bin/python invert.py --vectors vecs.tsv --profile short --steps 10 --beam 8                                        # qualité maximale, plus lent
 .venv/bin/python invert.py --vectors tensors.bytes --bytes --dim 1024                                                    # format binaire du Projector
 
-# rotation secrète (clé par usager) : création, application, retour
+# rotation secrète (clé par usager) : création, application, retour ; ne jamais faire tourner un vecteur fourni par un client (voir 5.5)
 SEED=$(python -c "import hmac,hashlib;print(hmac.new(b'<cle maitre>', b'<usager|type|bloc>', hashlib.sha256).hexdigest())")
-.venv/bin/python make_rotation.py --fixed_angle 90 --seed_hex $SEED --out cle.npy
+.venv/bin/python make_rotation.py --degrees 180 --seed_hex $SEED --out cle.npy     # angles uniformes sur [0°,180°], plans aléatoires
 .venv/bin/python rotate_vectors.py --matrix cle.npy --vectors vecs.tsv --out vecs_rot.tsv
 .venv/bin/python rotate_vectors.py --matrix cle.npy --vectors vecs_rot.tsv --out back.tsv --inverse
 
@@ -78,7 +78,7 @@ pièges rencontrés. Compter environ 12 h de GPU pour les modèles 32 tokens (v2
 
 # Document de travail : principe, résultats et protection
 
-*Version du 5 octobre 2026, destinée aux équipes sécurité et aux chercheurs ; les chapitres suivent le
+*Version du 11 octobre 2026, destinée aux équipes sécurité et aux chercheurs ; les chapitres suivent le
 document imprimable `docs/principe.pdf`.*
 
 ## 1. Contexte
@@ -155,9 +155,10 @@ d'emploi**, obtenues en construisant l'attaque pour l'évaluer sur un encodeur e
   tombe presque entièrement hors du sous-espace porteur de sens) ;
 - la comparaison expérimentale de variantes de clés (permutation des coordonnées, plans choisis selon les
   composantes principales, angles fixes ou aléatoires), chacune évaluée par l'attaque qui la casse ;
-- le choix d'une **rotation d'angle fixe de 90° dans 512 plans tirés au hasard**, dont la clé est le choix des
-  plans, dérivée par usager à partir d'une clé maître, avec la démonstration de son équivalence, en sécurité,
-  avec une rotation uniformément aléatoire ;
+- le choix d'une **rotation à angles uniformes sur [0°, 180°] dans 512 plans tirés au hasard** (une rotation
+  uniformément aléatoire), dérivée par usager à partir d'une clé maître, après analyse de la variante à angle
+  fixe de 90° : équivalente face à une fuite de vecteurs, mais dont la propriété M² = −I la rend cassable en une
+  requête par quiconque peut faire tourner un vecteur de son choix par le système (5.5) ;
 - une règle de dimensionnement des clés (nombre maximal de vecteurs par clé, selon le type de document) fondée
   sur une simulation de l'attaque par paires connues enchaînée à l'inverseur, reproductible pour recalibrer le
   seuil quand les inverseurs progressent ;
@@ -462,9 +463,10 @@ sous-espace de dimension n − 2 ; en dimension 1 024, de dimension 1 022, et un
 dans 512 plans à la fois, n'a aucune direction fixe. L'objet fondamental est le plan, pas l'axe. Les angles sont
 définis modulo 360° ; au-delà de 180°, ce sont les rotations de sens inverse dans le plan.
 
-Dans la suite, **K** désigne le cas particulier retenu ici : tous les angles θₖ valent 90°, de sorte que
-R devient la matrice J formée de 512 blocs [[0, −1], [1, 0]] et que **K = Q J Qᵀ**. Pour tout vecteur v,
-v · K v = 0 : chaque vecteur est orthogonal à son image.
+Dans la suite, **K** désigne le cas particulier où tous les angles θₖ valent 90°, de sorte que R devient la
+matrice J formée de 512 blocs [[0, −1], [1, 0]] et que **K = Q J Qᵀ**. Pour tout vecteur v, v · K v = 0 : chaque
+vecteur est orthogonal à son image. Cette variante, étudiée en détail en 5.3, a servi de référence ; la
+construction finalement retenue (angles uniformes sur [0°, 180°]) est notée M.
 
 ![Rotation de 90° dans un plan](docs/img/rotation_plan_3d.png)
 
@@ -484,12 +486,14 @@ l'attaque qui la met en défaut :
 | Permutation secrète des coordonnées | beaucoup plus faible | 3 paires connues suffisent à la retrouver ; sans paires, 49 % des coordonnées replacées à partir de 100 k vecteurs |
 | Angle fixe de 180° | aucune protection | la matrice vaut −I quel que soit le choix des plans |
 | Angle fixe intermédiaire (30°, 60°) | fuite partielle | la fraction cos θ de chaque vecteur reste en clair (5.4) |
-| **Angle fixe de 90°, plans aléatoires** | **retenu** | chaque vecteur est exactement orthogonal à son image ; la clé est une matrice dense inconnue ; inverse immédiate |
-| Angles aléatoires dans [0, 360°], plans aléatoires | équivalent | voir ci-dessous |
+| Angle fixe de 90°, plans aléatoires (K) | équivalent face à une fuite, cassable par oracle | masquage exact et clé dense, mais K² = −I : une requête suffit à qui peut faire tourner un vecteur choisi (5.5) |
+| Angles resserrés autour de 90° ([60°, 120°]), plans aléatoires | même faiblesse, atténuée | M² reste proche de −I (cosinus −0,83 entre v et M² v) |
+| **Angles uniformes sur [0°, 180°], plans aléatoires** | **retenu** | rotation uniformément aléatoire : masquage complet (résidu ≤ 0,05), aucune puissance de M proche de ±I, clé dense inconnue |
 
-La matrice retenue est la matrice K définie en 5.2 (K = Q J Qᵀ, tous les angles à 90°). En notant A et B les
-colonnes paires et impaires de la base aléatoire Q, elle s'écrit aussi K = B Aᵀ − A Bᵀ, forme sous laquelle le
-script la calcule. Elle vérifie Kᵀ = −K (antisymétrie), K Kᵀ = I (rotation) et K² = −I ; son inverse est −K.
+La variante K (K = Q J Qᵀ, tous les angles à 90°) s'écrit aussi K = B Aᵀ − A Bᵀ, A et B étant les colonnes paires
+et impaires de la base aléatoire Q ; elle vérifie Kᵀ = −K, K Kᵀ = I et K² = −I, son inverse est −K. La
+construction retenue, M = Q R Qᵀ avec des angles tirés uniformément sur [0°, 180°], n'a pas de forme
+particulière : son inverse est Mᵀ, et ses puissances M², M⁴ sont des rotations sans rapport avec v.
 
 **Pourquoi l'angle fixe de 90° vaut une rotation « totalement aléatoire ».** Pour que la recherche fonctionne,
 la matrice doit être une rotation ; « totalement aléatoire » signifie donc tirée uniformément parmi toutes les
@@ -516,13 +520,31 @@ remplace le second par la valeur centrale ; c'est une sous-famille. La sécurit�
    et aucune des deux constructions n'a d'axe privilégié lisible dans la covariance.
 
 Le secret d'une rotation est le repère dans lequel on tourne, pas l'angle : connaître l'angle (90°) sans le
-repère ne donne ni le vecteur d'origine ni la matrice. Les deux différences réelles, une dimension perdue sur
-1 024 et la moitié des paires pour un Procrustes, sont sans effet aux volumes de la règle d'emploi (5.6). En
-contrepartie, l'angle fixe apporte un masquage exact pour chaque vecteur, une inverse immédiate (−K) et une
-construction en un produit de matrices. Si l'on préfère la rotation de Haar, `make_rotation.py --degrees 180`
-la produit, à une nuance de distribution près sans importance ; le cosinus attendu entre un vecteur et son
-image vaut sin D / D pour des angles uniformes dans [0, D] (D en radians : 0,64 à 90°, 0 à 180° et 360°, −0,21 à
-270°).
+repère ne donne ni le vecteur d'origine ni la matrice. Les deux différences ci-dessus, une dimension perdue sur
+1 024 et la moitié des paires pour un Procrustes, sont sans effet aux volumes de la règle d'emploi (5.6).
+
+**Pourquoi, malgré cette équivalence, l'angle fixe n'est pas retenu.** K² = −I : appliquer la clé deux fois
+renvoie −v. Face à une fuite de vecteurs, cela ne sert à rien à l'attaquant, qui ne peut pas appliquer K. Mais
+s'il dispose d'un **oracle de rotation**, un composant du système qui tourne des vecteurs qu'il choisit (5.5),
+une seule requête lui suffit : à partir d'un vecteur fuité K v, il soumet −K v et obtient K(−K v) = v. Avec des
+angles variés, M² n'a pas de forme particulière et cette attaque en une requête disparaît. On pourrait penser
+concilier les deux qualités avec des angles tirés dans un intervalle resserré autour de 90°, mais la mesure dit
+le contraire : plus les angles sont proches de 90°, plus M² est proche de −I.
+
+| Angles par plan | cos(v, M v) | cos(v, M² v) | cos(v, M⁴ v) |
+|---|---|---|---|
+| 90° fixe (K) | 0,000 | −1,000 | +1,000 |
+| uniformes sur [60°, 120°] | −0,01 ± 0,02 | −0,83 ± 0,01 | +0,41 ± 0,02 |
+| uniformes sur [30°, 150°] | −0,02 ± 0,04 | −0,41 ± 0,02 | −0,21 ± 0,01 |
+| **uniformes sur [0°, 180°]** | −0,02 ± 0,05 | 0,00 ± 0,02 | 0,00 ± 0,03 |
+
+(moyennes sur 1 000 vecteurs réels et cinq clés). La raison est simple : cos(v, M v) ≈ E[cos θ] et
+cos(v, M² v) ≈ E[cos 2θ] ; la loi uniforme sur le cercle est la seule dont toutes les moyennes E[cos kθ] sont
+nulles. Le résidu de masquage des angles uniformes (−0,02 ± 0,05) est négligeable au regard du cosinus utile
+d'environ 0,7 dont l'inverseur a besoin ; la construction retenue est donc la rotation uniformément aléatoire
+(`make_rotation.py --degrees 180`), la variante K restant une référence utile pour l'analyse. Le cosinus
+attendu entre un vecteur et son image vaut sin D / D pour des angles uniformes dans [0, D] (D en radians :
+0,64 à 90°, 0 à 180° et 360°, −0,21 à 270°).
 
 ### 5.4 Effet de la rotation sur l'inversion
 
@@ -585,7 +607,20 @@ La valeur de la rotation dépend de ce qui fuit. Trois situations, par gravité 
    revient au cas non protégé : l'inverseur public s'applique, avec les performances du chapitre 4. Une clé maître
    compromise expose toutes les clés dérivées ; d'où le KMS/HSM et la possibilité de re-tourner la base.
 
-Une quatrième situation n'a rien à voir avec les vecteurs : la fuite des textes eux-mêmes. La rotation ne
+4. **Accès à un oracle de rotation** : l'attaquant peut faire tourner par le système des vecteurs de son
+   choix, ou observer l'effet de cette rotation. Le cas typique est une API de recherche qui accepte des
+   **vecteurs bruts** en requête (et non du texte) : le serveur tourne la requête avec la clé de l'usager puis
+   cherche les voisins. Face à un tel oracle, aucune transformation linéaire ne résiste : en soumettant les
+   1 024 vecteurs de base, l'attaquant lit les colonnes de M et possède la clé. Avec la variante à angle fixe
+   de 90°, c'est pire : K² = −I, donc à partir d'un vecteur fuité K v il soumet −K v, le serveur calcule
+   K(−K v) = v et renvoie le document d'origine et ses voisins ; le vecteur fuité est dé-anonymisé en une
+   requête, et si l'API renvoie les textes, le texte est obtenu sans inverseur. Règle de conception, impérative
+   quelle que soit la rotation : **le système n'applique jamais la clé à un vecteur fourni par un client** ;
+   les requêtes entrent sous forme de texte, l'encodage et la rotation se font côté serveur, et aucune sortie
+   ne contient de vecteur tourné. La construction retenue (angles uniformes) supprime en outre l'attaque en
+   une requête, par défense en profondeur.
+
+Une cinquième situation n'a rien à voir avec les vecteurs : la fuite des textes eux-mêmes. La rotation ne
 protège que les vecteurs ; si textes et vecteurs sont stockés et sauvegardés ensemble, elle ne protège rien.
 
 Des vecteurs leurres ajoutés à la base ne gênent aucune de ces attaques (ils n'entrent jamais dans les paires) ;
@@ -633,12 +668,13 @@ base illisible, et un générateur cryptographique à sortie spécifiée bit à 
 préférable au générateur de NumPy pour un système de production.
 
 **Clés faibles et contrôle de génération.** Une clé tirée « dans la queue de la distribution » pourrait-elle
-laisser passer de l'information ? Pour la construction retenue, deux niveaux de réponse :
+laisser passer de l'information ? Deux niveaux de réponse :
 
-- *Masquage : garanti par construction.* v · K v = 0 pour tout vecteur et toute clé, identité algébrique issue
-  de l'antisymétrie (mesuré sur 200 clés : |cos| ≤ 5·10⁻¹⁷). Aucune clé ne laisse une fraction du vecteur
-  d'origine en place. C'est un avantage de l'angle fixe sur les angles aléatoires, où cette fraction dépend du
-  tirage et vaudrait, avec un générateur défectueux concentrant les angles près de 0°, bien plus que 0.
+- *Masquage.* Avec la variante K, v · K v = 0 pour tout vecteur et toute clé (identité algébrique issue de
+  l'antisymétrie ; mesuré sur 200 clés : |cos| ≤ 5·10⁻¹⁷). Avec la construction retenue, le résidu cos(v, M v)
+  = Σ wₖ cos θₖ dépend du tirage des angles, mais il est la moyenne de 512 termes indépendants : −0,02 ± 0,05
+  sur 1 000 vecteurs et cinq clés, et il faudrait un générateur défectueux concentrant les angles près de 0°
+  pour qu'il devienne notable. Le seuil où l'inverseur lit quelque chose est un cosinus utile d'environ 0,7.
 - *Structure de la base : concentration de la mesure.* Une clé serait faible si ses plans tombaient dans le
   sous-espace porteur de sens (la clé aurait alors une dimension effective réduite pour qui veut l'estimer). Pour
   une base aléatoire, l'image de ce sous-espace de dimension 100 ne recoupe l'original qu'à hauteur de 100/1024
@@ -648,11 +684,11 @@ laisser passer de l'information ? Pour la construction retenue, deux niveaux de 
 
 Le risque réel n'est donc pas la malchance mais la fabrication : générateur mal initialisé, graine à faible
 entropie, clés répétées entre usagers, bogue produisant une base structurée (proche de l'identité ou d'une
-permutation : avec un angle de 90° connu et des plans canoniques, il n'y a plus aucun secret). Contrôles
-minimaux par clé : K Kᵀ = I et Kᵀ = −K à la précision machine (correction du calcul), et un test de non-structure
-de Q (aucune colonne dont une coordonnée dépasse 0,5 en valeur absolue, alors qu'une base aléatoire en
-dimension 1 024 a des coordonnées de l'ordre de 0,03). Le test de recouvrement du sous-espace principal reste
-possible mais, avec l'angle fixe, il ne contrôle plus le masquage, seulement le générateur.
+permutation) ou des angles mal répartis. Contrôles minimaux par clé : M Mᵀ = I à la précision machine
+(correction du calcul), répartition des 512 angles sur [0°, 180°] (aucun quart du cercle vide), et un test de
+non-structure de Q (aucune colonne dont une coordonnée dépasse 0,5 en valeur absolue, alors qu'une base
+aléatoire en dimension 1 024 a des coordonnées de l'ordre de 0,03). Le test de recouvrement du sous-espace
+principal contrôle le générateur, pas le masquage.
 
 ### 5.7 Procédure opérationnelle
 
@@ -660,7 +696,7 @@ possible mais, avec l'angle fixe, il ne contrôle plus le masquage, seulement le
 # dé-identification du texte (chapitre 6), puis :
 .venv/bin/python embed.py --texts passages.txt --out vecs.tsv --metadata meta.tsv      # vecteurs
 SEED=$(python -c "import hmac,hashlib;print(hmac.new(b'<cle maitre>', b'<usager|type|bloc>', hashlib.sha256).hexdigest())")
-.venv/bin/python make_rotation.py --fixed_angle 90 --seed_hex $SEED --out cle.npy        # clé (régénérable)
+.venv/bin/python make_rotation.py --degrees 180 --seed_hex $SEED --out cle.npy           # clé (régénérable) : angles uniformes, plans aléatoires
 .venv/bin/python rotate_vectors.py --matrix cle.npy --vectors vecs.tsv --out vecs_rot.tsv # ce qui est stocké
 .venv/bin/python rotate_vectors.py --matrix cle.npy --vectors vecs_rot.tsv --out back.tsv --inverse  # retour
 ```
@@ -778,7 +814,7 @@ pour les phrases courtes : c'est ce que la rotation doit ensuite protéger.
 |---|---|
 | `embed.py` | textes → vecteurs au format TensorFlow Projector (TSV ou `.bytes`) |
 | `invert.py` | vecteurs → textes ; `--profile short` / `long`, `--steps`, `--beam`, `--min_new_tokens` |
-| `make_rotation.py` | matrice de rotation (angles aléatoires ou `--fixed_angle 90`, `--seed_hex`) |
+| `make_rotation.py` | matrice de rotation (`--degrees 180` recommandé ; `--degrees_range`, `--fixed_angle` pour les expériences ; `--seed_hex`) |
 | `rotate_vectors.py` | application de la matrice (ou de son inverse) à un TSV |
 | `sweep_rotation.py` | balayage d'angles avec inversion, modèles chargés une fois |
 | `scripts/attack_pairs.py` | simulation de l'attaque par paires connues (Procrustes puis inversion) |
